@@ -13,6 +13,5 @@ data/*.zip
 
 # Generated outputs — reproducible by running the scripts.
 outputs/
-figures/*.png
-figures/*.svg
+
 *.log

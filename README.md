@@ -101,7 +101,7 @@ Nothing here needs an API key. Everything generative is pre-computed and
 committed to `artifacts/genai/`.
 
 ```bash
-git clone https://github.com/<you>/chakra-ai && cd chakra-ai
+git clone https://github.com/phereiitg/pekabu && cd pekabu
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 

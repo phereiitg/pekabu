@@ -1,0 +1,115 @@
+{
+  "tactics": [
+    "TA0043",
+    "TA0042",
+    "TA0001",
+    "FA0001",
+    "TA0002",
+    "TA0005",
+    "TA0112",
+    "FA0002"
+  ],
+  "tactic_names": [
+    "Recon",
+    "Resource Dev",
+    "Initial Access",
+    "Positioning",
+    "Execution",
+    "Stealth",
+    "Defense Impair",
+    "Monetization"
+  ],
+  "rails": [
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6",
+    "R7"
+  ],
+  "rail_names": [
+    "Card present",
+    "CNP human",
+    "CNP agentic",
+    "UPI push",
+    "UPI collect",
+    "Tokenised recurring",
+    "Wallet PPI"
+  ],
+  "grid": [
+    [
+      0,
+      0,
+      8,
+      2,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      5,
+      10,
+      2,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      2,
+      7,
+      4,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      2,
+      7,
+      2,
+      0,
+      2,
+      1
+    ],
+    [
+      0,
+      4,
+      19,
+      1,
+      1,
+      2,
+      0
+    ],
+    [
+      0,
+      4,
+      18,
+      3,
+      0,
+      2,
+      1
+    ],
+    [
+      0,
+      0,
+      9,
+      6,
+      0,
+      1,
+      2
+    ],
+    [
+      0,
+      3,
+      6,
+      5,
+      0,
+      0,
+      1
+    ]
+  ],
+  "total_vectors": 94
+}
