@@ -1,0 +1,2063 @@
+[
+  {
+    "id": "AGT-001",
+    "name": "Payment Mandate theft for an unrelated checkout",
+    "grade": "N2",
+    "source": "AP2 security considerations",
+    "f3": [
+      "F3X-1002"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B2"
+    ],
+    "breaks": "mandate",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-002",
+    "name": "Open-mandate reuse against a different closed mandate",
+    "grade": "N2",
+    "source": "AP2 security considerations",
+    "f3": [
+      "F3X-1002"
+    ],
+    "tactics": [
+      "TA0002",
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B2"
+    ],
+    "breaks": "mandate",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-003",
+    "name": "Injected agent approves multiple checkouts from one open mandate",
+    "grade": "N2",
+    "source": "AP2 security considerations",
+    "f3": [
+      "F3X-1001"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1",
+      "B2"
+    ],
+    "breaks": "mandate",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-004",
+    "name": "Mandate scope inflation via poisoned merchant listing",
+    "grade": "N1",
+    "source": "arXiv:2601.22569",
+    "f3": [
+      "F3X-1001"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1"
+    ],
+    "breaks": "intent",
+    "status": "implemented",
+    "note": "Headline demo. 100% ASR published."
+  },
+  {
+    "id": "AGT-005",
+    "name": "Branded Whisper \u2014 agent ranking manipulation",
+    "grade": "N1",
+    "source": "arXiv:2601.22569",
+    "f3": [
+      "F3X-1008"
+    ],
+    "tactics": [
+      "TA0043",
+      "TA0042"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A5",
+      "B1"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-006",
+    "name": "Vault Whisper \u2014 cross-user disclosure via direct injection",
+    "grade": "N1",
+    "source": "arXiv:2601.22569",
+    "f3": [
+      "F3X-1009"
+    ],
+    "tactics": [
+      "TA0043"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1"
+    ],
+    "breaks": "session",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-007",
+    "name": "Replay on trust chains \u2014 stale delegation honoured",
+    "grade": "N2",
+    "source": "OWASP ASI07",
+    "f3": [
+      "F3X-1002"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B4"
+    ],
+    "breaks": "mandate",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-008",
+    "name": "Workflow authorisation drift \u2014 old token completes after limit cut",
+    "grade": "N2",
+    "source": "OWASP ASI03",
+    "f3": [
+      "F1005.003",
+      "F3X-1010"
+    ],
+    "tactics": [
+      "TA0002",
+      "TA0005"
+    ],
+    "rails": [
+      "R3",
+      "R6"
+    ],
+    "caps": [
+      "B2"
+    ],
+    "breaks": "mandate",
+    "status": "implemented",
+    "note": ""
+  },
+  {
+    "id": "AGT-009",
+    "name": "TOCTOU in agent workflows",
+    "grade": "N2",
+    "source": "OWASP ASI03",
+    "f3": [
+      "F3X-1010"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B2"
+    ],
+    "breaks": "mandate",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-010",
+    "name": "Semantics split-brain across two agents",
+    "grade": "N2",
+    "source": "OWASP ASI07",
+    "f3": [
+      "F3X-1011"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B4"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-011",
+    "name": "Protocol downgrade then objective injection",
+    "grade": "N2",
+    "source": "OWASP ASI07",
+    "f3": [
+      "F3X-1012"
+    ],
+    "tactics": [
+      "TA0001",
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B4"
+    ],
+    "breaks": "channel",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-012",
+    "name": "Cross-agent confused deputy relaying a payment instruction",
+    "grade": "N2",
+    "source": "OWASP ASI03",
+    "f3": [
+      "F3X-1005"
+    ],
+    "tactics": [
+      "TA0001",
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B4"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-013",
+    "name": "Forged agent persona in an A2A registry",
+    "grade": "N0",
+    "source": "Trustwave, Apr 2025",
+    "f3": [
+      "F3X-1004"
+    ],
+    "tactics": [
+      "TA0042",
+      "TA0001"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B4"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-014",
+    "name": "Agent-in-the-middle via exaggerated agent card",
+    "grade": "N0",
+    "source": "Trustwave, Apr 2025",
+    "f3": [
+      "F3X-1004",
+      "T1557"
+    ],
+    "tactics": [
+      "TA0001",
+      "FA0001"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B4"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-015",
+    "name": "Impersonated approval agent injected into a payment workflow",
+    "grade": "N2",
+    "source": "OWASP ASI10",
+    "f3": [
+      "F3X-1005"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B4"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-016",
+    "name": "Synthetic identity injection via unverified descriptors",
+    "grade": "N2",
+    "source": "OWASP ASI03",
+    "f3": [
+      "F3X-1004"
+    ],
+    "tactics": [
+      "TA0042"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B4"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-017",
+    "name": "Device-code phishing across agents",
+    "grade": "N2",
+    "source": "OWASP ASI03",
+    "f3": [
+      "T1550.001"
+    ],
+    "tactics": [
+      "TA0001"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1"
+    ],
+    "breaks": "credential",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-018",
+    "name": "Un-scoped privilege inheritance in delegation chains",
+    "grade": "N2",
+    "source": "OWASP ASI03",
+    "f3": [
+      "F3X-1013"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-019",
+    "name": "Identity sharing \u2014 delegated access reused by other principals",
+    "grade": "N2",
+    "source": "OWASP ASI03",
+    "f3": [
+      "F3X-1013"
+    ],
+    "tactics": [
+      "TA0001"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-020",
+    "name": "Booking memory poisoning bypasses payment checks",
+    "grade": "N2",
+    "source": "OWASP ASI06",
+    "f3": [
+      "F3X-1006"
+    ],
+    "tactics": [
+      "FA0001",
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B3"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-021",
+    "name": "Context-window exploitation \u2014 permissions escalate across sessions",
+    "grade": "N2",
+    "source": "OWASP ASI06",
+    "f3": [
+      "F3X-1006"
+    ],
+    "tactics": [
+      "FA0001",
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B3"
+    ],
+    "breaks": "mandate",
+    "status": "implemented",
+    "note": ""
+  },
+  {
+    "id": "AGT-022",
+    "name": "Long-term memory drift via incrementally tainted data",
+    "grade": "N2",
+    "source": "OWASP ASI06",
+    "f3": [
+      "F3X-1006"
+    ],
+    "tactics": [
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B3"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-023",
+    "name": "Goal-lock drift \u2014 scheduled prompts reweight toward low-friction approval",
+    "grade": "N2",
+    "source": "OWASP ASI01",
+    "f3": [
+      "F3X-1003"
+    ],
+    "tactics": [
+      "TA0005",
+      "TA0112"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B3"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-024",
+    "name": "Shared memory poisoning \u2014 bogus refund policy reused",
+    "grade": "N2",
+    "source": "OWASP ASI06",
+    "f3": [
+      "F3X-1006"
+    ],
+    "tactics": [
+      "FA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B3"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-025",
+    "name": "Gemini long-term memory corruption via prompt injection",
+    "grade": "N0",
+    "source": "Ars Technica, Feb 2025",
+    "f3": [
+      "F3X-1006"
+    ],
+    "tactics": [
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B3"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-026",
+    "name": "Cross-tenant vector bleed via loose namespace filters",
+    "grade": "N2",
+    "source": "OWASP ASI06",
+    "f3": [
+      "F3X-1009"
+    ],
+    "tactics": [
+      "TA0043"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B3"
+    ],
+    "breaks": "session",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-027",
+    "name": "Bootstrap poisoning \u2014 agent re-ingests own output as trusted",
+    "grade": "N2",
+    "source": "OWASP ASI06",
+    "f3": [
+      "F3X-1006"
+    ],
+    "tactics": [
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B3"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-028",
+    "name": "Anomaly flooding to exhaust reviewers, then slow cartel",
+    "grade": "N2",
+    "source": "CSA AP2 guidance",
+    "f3": [
+      "F3X-1007"
+    ],
+    "tactics": [
+      "TA0112"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A7"
+    ],
+    "breaks": "none",
+    "status": "implemented",
+    "note": ""
+  },
+  {
+    "id": "AGT-029",
+    "name": "Auto-remediation loop suppresses alerts to meet SLAs",
+    "grade": "N2",
+    "source": "OWASP ASI08",
+    "f3": [
+      "F3X-1007"
+    ],
+    "tactics": [
+      "TA0112"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A7",
+      "B4"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-030",
+    "name": "Governance drift cascade \u2014 bulk approval after repeated success",
+    "grade": "N2",
+    "source": "OWASP ASI08",
+    "f3": [
+      "F3X-1007"
+    ],
+    "tactics": [
+      "TA0112",
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A7"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-031",
+    "name": "Within-parameter cascade \u2014 inflated limits, compliance blind",
+    "grade": "N2",
+    "source": "OWASP ASI08",
+    "f3": [
+      "F3X-1003"
+    ],
+    "tactics": [
+      "TA0002",
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B4"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-032",
+    "name": "Log injection to mask cross-agent coordination",
+    "grade": "N2",
+    "source": "CSA AP2 guidance",
+    "f3": [
+      "T1070"
+    ],
+    "tactics": [
+      "TA0005",
+      "TA0112"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A6"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-033",
+    "name": "Metadata profiling of agent decision cycles",
+    "grade": "N2",
+    "source": "OWASP ASI07",
+    "f3": [
+      "F3X-1014"
+    ],
+    "tactics": [
+      "TA0043"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A5"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-034",
+    "name": "Malicious MCP server impersonating a legitimate one",
+    "grade": "N0",
+    "source": "Koi Security, Sep 2025",
+    "f3": [
+      "T1195",
+      "F3X-1015"
+    ],
+    "tactics": [
+      "TA0042",
+      "TA0001"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A6"
+    ],
+    "breaks": "channel",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-035",
+    "name": "Tool-descriptor poisoning via MCP metadata",
+    "grade": "N0",
+    "source": "Invariant Labs",
+    "f3": [
+      "F3X-1015"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A6"
+    ],
+    "breaks": "channel",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-036",
+    "name": "Backdoored MCP package, install-time and runtime shells",
+    "grade": "N0",
+    "source": "Koi Security, Oct 2025",
+    "f3": [
+      "T1195"
+    ],
+    "tactics": [
+      "TA0042"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A6"
+    ],
+    "breaks": "channel",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-037",
+    "name": "Tool name typosquatting resolves before the real tool",
+    "grade": "N2",
+    "source": "OWASP ASI02",
+    "f3": [
+      "F3X-1015"
+    ],
+    "tactics": [
+      "TA0042",
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A6"
+    ],
+    "breaks": "channel",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-038",
+    "name": "Poisoned knowledge plugin seeding a RAG index over time",
+    "grade": "N2",
+    "source": "OWASP ASI04",
+    "f3": [
+      "F3X-1006"
+    ],
+    "tactics": [
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B3"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "AGT-039",
+    "name": "Over-privileged financial API \u2014 order agent can also refund",
+    "grade": "N2",
+    "source": "OWASP ASI02",
+    "f3": [
+      "F3X-1013"
+    ],
+    "tactics": [
+      "FA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1"
+    ],
+    "breaks": "mandate",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "HUM-001",
+    "name": "Invoice copilot fraud \u2014 poisoned invoice, attacker bank details",
+    "grade": "N2",
+    "source": "OWASP ASI09",
+    "f3": [
+      "F1036",
+      "F1005.006"
+    ],
+    "tactics": [
+      "TA0042",
+      "FA0002"
+    ],
+    "rails": [
+      "R2",
+      "R3"
+    ],
+    "caps": [
+      "A4",
+      "B1"
+    ],
+    "breaks": "none-coerced",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "HUM-002",
+    "name": "Copilot manipulated into influencing a wire transfer",
+    "grade": "N0",
+    "source": "ASI09 references",
+    "f3": [
+      "F3X-1016"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R2",
+      "R3"
+    ],
+    "caps": [
+      "A4",
+      "B1"
+    ],
+    "breaks": "none-coerced",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "HUM-003",
+    "name": "Fake explainability secures human approval",
+    "grade": "N2",
+    "source": "OWASP ASI09",
+    "f3": [
+      "F3X-1016"
+    ],
+    "tactics": [
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A4"
+    ],
+    "breaks": "none-coerced",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "HUM-004",
+    "name": "Consent laundering via read-only preview with side effects",
+    "grade": "N2",
+    "source": "OWASP ASI09",
+    "f3": [
+      "F3X-1016"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "HUM-005",
+    "name": "Human-in-the-loop fatigue at autonomous approval volume",
+    "grade": "N2",
+    "source": "CSA AP2 guidance",
+    "f3": [
+      "F3X-1007"
+    ],
+    "tactics": [
+      "TA0112"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A7"
+    ],
+    "breaks": "none-coerced",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "HUM-006",
+    "name": "Missing confirmation turns one prompt into an irreversible transfer",
+    "grade": "N2",
+    "source": "OWASP ASI09",
+    "f3": [
+      "F3X-1016"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "UPI-001",
+    "name": "APP fraud \u2014 victim initiates and authenticates under deception",
+    "grade": "N0",
+    "source": "RBI DP Apr 2026",
+    "f3": [
+      "F1025.001",
+      "F1025.002"
+    ],
+    "tactics": [
+      "TA0002",
+      "FA0002"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A4"
+    ],
+    "breaks": "none-coerced",
+    "status": "implemented",
+    "note": ""
+  },
+  {
+    "id": "UPI-002",
+    "name": "Bogus call centre operations",
+    "grade": "N0",
+    "source": "RBI DP Apr 2026",
+    "f3": [
+      "F1032"
+    ],
+    "tactics": [
+      "TA0001"
+    ],
+    "rails": [
+      "R4",
+      "R5"
+    ],
+    "caps": [
+      "A1",
+      "A4"
+    ],
+    "breaks": "none-coerced",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "UPI-003",
+    "name": "Deepfake-driven impersonation scam",
+    "grade": "N0",
+    "source": "RBI DP Apr 2026",
+    "f3": [
+      "F1031"
+    ],
+    "tactics": [
+      "TA0001",
+      "TA0005"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A1",
+      "A2"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "UPI-004",
+    "name": "Mule account network for proceeds movement",
+    "grade": "N0",
+    "source": "RBI DP \u00b7 MuleHunter.AI",
+    "f3": [
+      "F1009",
+      "F1009.002"
+    ],
+    "tactics": [
+      "FA0001",
+      "FA0002"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A3"
+    ],
+    "breaks": "identity",
+    "status": "implemented",
+    "note": ""
+  },
+  {
+    "id": "UPI-005",
+    "name": "Impersonation of family, fabricated medical or legal urgency",
+    "grade": "N0",
+    "source": "RBI DP Apr 2026",
+    "f3": [
+      "F1031"
+    ],
+    "tactics": [
+      "TA0001"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A1",
+      "A4"
+    ],
+    "breaks": "none-coerced",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "UPI-006",
+    "name": "Collect-request fraud \u2014 a debit dressed as a credit",
+    "grade": "N0",
+    "source": "Rail primitive",
+    "f3": [
+      "F3X-1017"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R5"
+    ],
+    "caps": [
+      "A4"
+    ],
+    "breaks": "none-coerced",
+    "status": "implemented",
+    "note": ""
+  },
+  {
+    "id": "UPI-007",
+    "name": "Aggregator-onboarded merchant laundering as small-business commerce",
+    "grade": "N0",
+    "source": "Mule telemetry",
+    "f3": [
+      "F1021"
+    ],
+    "tactics": [
+      "TA0042",
+      "FA0002"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A3"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "UPI-008",
+    "name": "Payments-bank VPA farming via low-friction onboarding",
+    "grade": "N0",
+    "source": "Mule telemetry",
+    "f3": [
+      "T1585",
+      "F1020.001"
+    ],
+    "tactics": [
+      "TA0042",
+      "FA0001"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A3"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "UPI-009",
+    "name": "Whitelist bypass \u2014 victim persuaded to whitelist the payee",
+    "grade": "N2",
+    "source": "RBI DP, stated con",
+    "f3": [
+      "F3X-1018"
+    ],
+    "tactics": [
+      "TA0112"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A4"
+    ],
+    "breaks": "none-coerced",
+    "status": "implemented",
+    "note": "RBI names this weakness in Option 1 themselves."
+  },
+  {
+    "id": "CRD-001",
+    "name": "Card testing \u2014 micro-probes to validate a BIN range",
+    "grade": "N0",
+    "source": "Standard",
+    "f3": [
+      "F1012",
+      "F1046"
+    ],
+    "tactics": [
+      "FA0001"
+    ],
+    "rails": [
+      "R2"
+    ],
+    "caps": [
+      "A6",
+      "A7"
+    ],
+    "breaks": "credential",
+    "status": "implemented",
+    "note": ""
+  },
+  {
+    "id": "CRD-002",
+    "name": "Deepfake video-call authorisation of a transfer",
+    "grade": "N0",
+    "source": "Arup, Jan 2024",
+    "f3": [
+      "F1031"
+    ],
+    "tactics": [
+      "TA0001"
+    ],
+    "rails": [
+      "R2"
+    ],
+    "caps": [
+      "A2"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "CRD-003",
+    "name": "Voice-cloned relative-in-need scam",
+    "grade": "N0",
+    "source": "Widely reported",
+    "f3": [
+      "F1031",
+      "F1040.001"
+    ],
+    "tactics": [
+      "TA0001"
+    ],
+    "rails": [
+      "R2",
+      "R4"
+    ],
+    "caps": [
+      "A1"
+    ],
+    "breaks": "none-coerced",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "CRD-004",
+    "name": "Deepfake selfie at biometric onboarding",
+    "grade": "N0",
+    "source": "Entrust 2026",
+    "f3": [
+      "F1020.001"
+    ],
+    "tactics": [
+      "TA0042"
+    ],
+    "rails": [
+      "R2"
+    ],
+    "caps": [
+      "A2"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "CRD-005",
+    "name": "Injection attack bypassing the biometric capture path",
+    "grade": "N0",
+    "source": "Entrust 2026, +40% YoY",
+    "f3": [
+      "F1023"
+    ],
+    "tactics": [
+      "TA0042",
+      "TA0005"
+    ],
+    "rails": [
+      "R2"
+    ],
+    "caps": [
+      "A6"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "CRD-006",
+    "name": "Synthetic identity onboarding with generated documents",
+    "grade": "N0",
+    "source": "Sumsub",
+    "f3": [
+      "F1020.001",
+      "F1027"
+    ],
+    "tactics": [
+      "TA0042"
+    ],
+    "rails": [
+      "R2"
+    ],
+    "caps": [
+      "A3"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "CRD-007",
+    "name": "Cloned merchant site resurfacing after takedown",
+    "grade": "N0",
+    "source": "Standard",
+    "f3": [
+      "F1020.002",
+      "T1583.001"
+    ],
+    "tactics": [
+      "TA0042"
+    ],
+    "rails": [
+      "R2"
+    ],
+    "caps": [
+      "A6"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "CRD-008",
+    "name": "LLM-in-the-loop malware querying a model mid-execution",
+    "grade": "N0",
+    "source": "PROMPTFLUX/STEAL Nov 2025",
+    "f3": [
+      "T1195"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R2"
+    ],
+    "caps": [
+      "A6",
+      "A7"
+    ],
+    "breaks": "credential",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "CRD-009",
+    "name": "Chargeback abuse / first-party fraud",
+    "grade": "N0",
+    "source": "Sumsub",
+    "f3": [
+      "F1024"
+    ],
+    "tactics": [
+      "TA0002"
+    ],
+    "rails": [
+      "R2"
+    ],
+    "caps": [],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "CRD-010",
+    "name": "3DS bypass via deliberate authentication failure",
+    "grade": "N0",
+    "source": "F3 F1001",
+    "f3": [
+      "F1001",
+      "F1039"
+    ],
+    "tactics": [
+      "TA0005"
+    ],
+    "rails": [
+      "R2"
+    ],
+    "caps": [],
+    "breaks": "session",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-001",
+    "name": "Model-tier fingerprinting of a payment agent",
+    "grade": "N3",
+    "source": "Derived \u00b7 AIP-Bench gradient",
+    "f3": [
+      "F3X-1019"
+    ],
+    "tactics": [
+      "TA0043"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A5",
+      "B1"
+    ],
+    "breaks": "none",
+    "status": "implemented",
+    "note": "Probe with graded payloads to identify the model, then pick structural vs semantic attack. Exists only because published ASR ranges 0-100% by model."
+  },
+  {
+    "id": "DRV-002",
+    "name": "Mandate policy enumeration via boundary probing",
+    "grade": "N3",
+    "source": "Derived from F1046",
+    "f3": [
+      "F3X-1020"
+    ],
+    "tactics": [
+      "TA0043"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A5",
+      "B2"
+    ],
+    "breaks": "none",
+    "status": "implemented",
+    "note": "Learn ceiling, MCC allowlist and expiry without triggering a decline. F1046 Test Payment Thresholds, but against a policy object rather than a rail."
+  },
+  {
+    "id": "DRV-003",
+    "name": "Agent card harvesting across a merchant population",
+    "grade": "N3",
+    "source": "Derived from AGT-014",
+    "f3": [
+      "F3X-1020"
+    ],
+    "tactics": [
+      "TA0043"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A5",
+      "B4"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-004",
+    "name": "Agent liveness and capability probing via benign orders",
+    "grade": "N3",
+    "source": "Derived",
+    "f3": [
+      "F3X-1020"
+    ],
+    "tactics": [
+      "TA0043"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A5"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-005",
+    "name": "SEO poisoning tuned for agent retrieval, not human search",
+    "grade": "N3",
+    "source": "Derived from T1608.006",
+    "f3": [
+      "T1608.006",
+      "F3X-1008"
+    ],
+    "tactics": [
+      "TA0042"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A5",
+      "A6"
+    ],
+    "breaks": "intent",
+    "status": "taxonomy_only",
+    "note": "Agents rank on structured data and description text, so the poisoning differs from human SEO."
+  },
+  {
+    "id": "DRV-006",
+    "name": "Shell merchant optimised for agent discovery rather than clicks",
+    "grade": "N3",
+    "source": "Derived from F1021",
+    "f3": [
+      "F1021",
+      "F3X-1008"
+    ],
+    "tactics": [
+      "TA0042"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A5"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-007",
+    "name": "Disposable agent identity farming below per-agent velocity limits",
+    "grade": "N3",
+    "source": "Derived from UPI-008",
+    "f3": [
+      "T1585",
+      "F3X-1004"
+    ],
+    "tactics": [
+      "TA0042"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A7",
+      "B1"
+    ],
+    "breaks": "identity",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-008",
+    "name": "Mule-controlled agent holding a legitimately delegated token",
+    "grade": "N3",
+    "source": "Derived \u00b7 UPI-004 x R3",
+    "f3": [
+      "F1009",
+      "F3X-1021"
+    ],
+    "tactics": [
+      "FA0001"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1",
+      "B2"
+    ],
+    "breaks": "identity",
+    "status": "implemented",
+    "note": "Fraud acquires genuine delegation provenance. Defeats provenance-based defences by construction."
+  },
+  {
+    "id": "DRV-009",
+    "name": "Dormant agent aging \u2014 clean history built before compromise",
+    "grade": "N3",
+    "source": "Derived \u00b7 mule dormancy x R3",
+    "f3": [
+      "F3X-1021"
+    ],
+    "tactics": [
+      "FA0001",
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B1"
+    ],
+    "breaks": "identity",
+    "status": "implemented",
+    "note": "Direct analogue of mule dormancy. Produces the burst-after-quiet signature in agent form."
+  },
+  {
+    "id": "DRV-010",
+    "name": "Agent reputation laundering via low-value legitimate volume",
+    "grade": "N3",
+    "source": "Derived",
+    "f3": [
+      "F3X-1021"
+    ],
+    "tactics": [
+      "FA0001",
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A7",
+      "B1"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-011",
+    "name": "In-scope resale laundering \u2014 liquid goods to a drop address",
+    "grade": "N3",
+    "source": "Derived",
+    "f3": [
+      "F1028"
+    ],
+    "tactics": [
+      "FA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B2"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-012",
+    "name": "Stored-value purchase inside an MCC allowlist",
+    "grade": "N3",
+    "source": "Derived",
+    "f3": [
+      "F1028",
+      "F3X-1022"
+    ],
+    "tactics": [
+      "FA0002"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B2"
+    ],
+    "breaks": "mandate",
+    "status": "taxonomy_only",
+    "note": "MCC allowlists rarely exclude stored value, so gift cards sit inside most mandates."
+  },
+  {
+    "id": "DRV-013",
+    "name": "Intent-schema ambiguity exploitation",
+    "grade": "N3",
+    "source": "Derived \u00b7 attack on our Head C",
+    "f3": [
+      "F3X-1023"
+    ],
+    "tactics": [
+      "TA0112",
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A5",
+      "B2"
+    ],
+    "breaks": "intent",
+    "status": "implemented",
+    "note": "Craft purchases semantically defensible against the stated intent. Targets a semantic-consistency detector specifically. This is the attack on our own defence and belongs in F16."
+  },
+  {
+    "id": "DRV-014",
+    "name": "Mandate expiry extension via memory poisoning",
+    "grade": "N3",
+    "source": "Derived \u00b7 AGT-022 x B2",
+    "f3": [
+      "F3X-1023"
+    ],
+    "tactics": [
+      "TA0112"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "B2",
+      "B3"
+    ],
+    "breaks": "mandate",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-015",
+    "name": "Velocity-window straddling across agent identities",
+    "grade": "N3",
+    "source": "Derived",
+    "f3": [
+      "F1045",
+      "F3X-1023"
+    ],
+    "tactics": [
+      "TA0112",
+      "TA0005"
+    ],
+    "rails": [
+      "R3"
+    ],
+    "caps": [
+      "A7"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-016",
+    "name": "VPA liveness enumeration abusing beneficiary name look-up",
+    "grade": "N3",
+    "source": "Derived \u00b7 RBI DP mentions the facility",
+    "f3": [
+      "F3X-1024"
+    ],
+    "tactics": [
+      "TA0043"
+    ],
+    "rails": [
+      "R4",
+      "R5"
+    ],
+    "caps": [
+      "A5",
+      "A7"
+    ],
+    "breaks": "none",
+    "status": "implemented",
+    "note": "Turns a security feature into a reconnaissance oracle."
+  },
+  {
+    "id": "DRV-017",
+    "name": "Vulnerable-segment disclosure via the trusted-person requirement",
+    "grade": "N3",
+    "source": "Derived \u00b7 RBI Option 2",
+    "f3": [
+      "F3X-1024"
+    ],
+    "tactics": [
+      "TA0043"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A5"
+    ],
+    "breaks": "none",
+    "status": "implemented",
+    "note": "Once the control ships, an account requiring trusted-person approval reveals the holder is 70+ or a person with disability. The protective control leaks the vulnerability it protects."
+  },
+  {
+    "id": "DRV-018",
+    "name": "Trusted-person social engineering above Rs 50,000",
+    "grade": "N3",
+    "source": "Derived \u00b7 RBI Option 2",
+    "f3": [
+      "F3X-1018"
+    ],
+    "tactics": [
+      "TA0112"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A1",
+      "A4"
+    ],
+    "breaks": "none-coerced",
+    "status": "implemented",
+    "note": ""
+  },
+  {
+    "id": "DRV-019",
+    "name": "Micro-structuring below the Rs 10,000 lag threshold",
+    "grade": "N3",
+    "source": "Derived \u00b7 RBI Option 1",
+    "f3": [
+      "F1045"
+    ],
+    "tactics": [
+      "TA0112",
+      "TA0005"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A7"
+    ],
+    "breaks": "none-coerced",
+    "status": "implemented",
+    "note": "F3 already has Structuring. The derivation is the specific threshold and the throughput cost."
+  },
+  {
+    "id": "DRV-020",
+    "name": "Aggregate-credit structuring below the Rs 25 lakh ceiling",
+    "grade": "N3",
+    "source": "Derived \u00b7 RBI Option 3",
+    "f3": [
+      "F1045",
+      "F1009"
+    ],
+    "tactics": [
+      "TA0112",
+      "FA0002"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A7"
+    ],
+    "breaks": "identity",
+    "status": "implemented",
+    "note": ""
+  },
+  {
+    "id": "DRV-021",
+    "name": "Cancellation-window exhaustion \u2014 sustained contact through the lag hour",
+    "grade": "N3",
+    "source": "Derived \u00b7 RBI Option 1",
+    "f3": [
+      "F3X-1018"
+    ],
+    "tactics": [
+      "TA0112"
+    ],
+    "rails": [
+      "R4"
+    ],
+    "caps": [
+      "A1",
+      "A4"
+    ],
+    "breaks": "none-coerced",
+    "status": "implemented",
+    "note": "The lag only works if the victim disengages. RBI names sustained psychological pressure as the fraudster's core method, which is precisely what defeats it."
+  },
+  {
+    "id": "DRV-022",
+    "name": "Kill-switch social engineering and malicious activation",
+    "grade": "N3",
+    "source": "Derived \u00b7 RBI Option 4",
+    "f3": [
+      "F3X-1018"
+    ],
+    "tactics": [
+      "TA0112"
+    ],
+    "rails": [
+      "R4",
+      "R7"
+    ],
+    "caps": [
+      "A4"
+    ],
+    "breaks": "none-coerced",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-023",
+    "name": "Recurring mandate as control evasion",
+    "grade": "N3",
+    "source": "Derived \u00b7 RBI Options 1 & 2 exemptions",
+    "f3": [
+      "F3X-1025"
+    ],
+    "tactics": [
+      "TA0112",
+      "FA0001"
+    ],
+    "rails": [
+      "R6"
+    ],
+    "caps": [
+      "B2"
+    ],
+    "breaks": "mandate",
+    "status": "implemented",
+    "note": "RBI exempts e-mandates and NACH from BOTH the one-hour lag and the trusted-person requirement. Converting a one-off fraud into a recurring mandate escapes both proposed controls. An exemption written for convenience is an evasion path."
+  },
+  {
+    "id": "DRV-024",
+    "name": "E-mandate amount creep on variable recurring authorisations",
+    "grade": "N3",
+    "source": "Derived",
+    "f3": [
+      "F3X-1025"
+    ],
+    "tactics": [
+      "TA0005",
+      "TA0002"
+    ],
+    "rails": [
+      "R6"
+    ],
+    "caps": [
+      "B2"
+    ],
+    "breaks": "mandate",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-025",
+    "name": "Dormant mandate reactivation after the relationship lapses",
+    "grade": "N3",
+    "source": "Derived from F1042",
+    "f3": [
+      "F1042",
+      "F3X-1025"
+    ],
+    "tactics": [
+      "FA0001"
+    ],
+    "rails": [
+      "R6"
+    ],
+    "caps": [
+      "B2"
+    ],
+    "breaks": "mandate",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-026",
+    "name": "Wallet top-up as a lag-free intermediate hop",
+    "grade": "N3",
+    "source": "Derived \u00b7 RBI Option 1 scope",
+    "f3": [
+      "F3X-1026"
+    ],
+    "tactics": [
+      "TA0112",
+      "FA0001"
+    ],
+    "rails": [
+      "R7"
+    ],
+    "caps": [
+      "A7"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": "If the lag binds A2A transfers but wallet loads route differently, wallets are the bypass."
+  },
+  {
+    "id": "DRV-027",
+    "name": "PPI chaining to break the payer-payee link before cash-out",
+    "grade": "N3",
+    "source": "Derived",
+    "f3": [
+      "F3X-1026",
+      "F1017"
+    ],
+    "tactics": [
+      "FA0002",
+      "TA0005"
+    ],
+    "rails": [
+      "R7"
+    ],
+    "caps": [
+      "A7"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  },
+  {
+    "id": "DRV-028",
+    "name": "Agent-assisted card testing under a legitimate agent framework",
+    "grade": "N3",
+    "source": "Derived \u00b7 CRD-001 x A7",
+    "f3": [
+      "F1012",
+      "F3X-1027"
+    ],
+    "tactics": [
+      "FA0001",
+      "TA0005"
+    ],
+    "rails": [
+      "R2",
+      "R3"
+    ],
+    "caps": [
+      "A6",
+      "A7"
+    ],
+    "breaks": "credential",
+    "status": "implemented",
+    "note": "The attacker runs card testing through a real browsing-agent stack, so bot fingerprinting fails because the traffic genuinely is an agent."
+  },
+  {
+    "id": "DRV-029",
+    "name": "Rail-hopping to defeat position-limited detection",
+    "grade": "N3",
+    "source": "Derived \u00b7 four-party asymmetry",
+    "f3": [
+      "F3X-1028"
+    ],
+    "tactics": [
+      "TA0005",
+      "FA0002"
+    ],
+    "rails": [
+      "R2",
+      "R4"
+    ],
+    "caps": [
+      "A7"
+    ],
+    "breaks": "none",
+    "status": "implemented",
+    "note": "Acquire on cards, cash out on UPI. No single node in the four-party model sees both halves."
+  },
+  {
+    "id": "DRV-030",
+    "name": "Agent-mediated dispute abuse at scale",
+    "grade": "N3",
+    "source": "Derived \u00b7 CRD-009 x A7",
+    "f3": [
+      "F1024"
+    ],
+    "tactics": [
+      "TA0002",
+      "FA0002"
+    ],
+    "rails": [
+      "R2",
+      "R3"
+    ],
+    "caps": [
+      "A7",
+      "A4"
+    ],
+    "breaks": "none",
+    "status": "taxonomy_only",
+    "note": ""
+  }
+]

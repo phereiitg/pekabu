@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+.idea/
+.vscode/
+
+# Datasets are large and licensed. See data/README.md for sources.
+data/*.csv
+data/*.parquet
+data/*.zip
+
+# Generated outputs — reproducible by running the scripts.
+outputs/
+figures/*.png
+figures/*.svg
+*.log

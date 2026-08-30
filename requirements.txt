@@ -1,0 +1,15 @@
+# Core. The simulator, fidelity harness and detector need only these.
+pandas>=2.0
+numpy>=1.24
+
+# Fidelity harness reads IEEE-CIS parquet/csv; scikit-learn is used only for
+# comparison baselines, not for the scorecards (those are implemented directly
+# so the weight-of-evidence terms stay inspectable).
+scikit-learn>=1.3
+
+# Figure generation for the write-up and the UI data files.
+matplotlib>=3.7
+
+# Optional: live GenAI calls. The repo runs without this — every generative
+# artifact is committed under artifacts/genai/.
+#   export GEMINI_API_KEY=...
