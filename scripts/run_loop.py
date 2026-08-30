@@ -32,6 +32,8 @@ from chakra.attacks.plugins import (MuleFarm, CardTesting, CollectRequestScam,
 from chakra.detect.features import FeatureBuilder
 from chakra.detect.heads import Head, Fusion
 from chakra.detect.portfolio import Portfolio, route_of, ROUTE_ALPHA, ROUTE_HEADS
+from chakra.detect.peer import build_index
+from chakra.detect.semantic import SemanticMatcher
 from chakra.detect.reservoir import TrainingReservoir
 from chakra.redsearch.loop import RedSearch, Escape, IterationResult, coverage_error_by_route
 from scripts.run_detect import pr_auc as pr_auc_local
@@ -132,9 +134,30 @@ def main() -> int:
             "issued": (m.capsule.issued_at.timestamp()
                        if m.capsule.issued_at else None),
             "hint": m.capsule.category_hint}
-            for m, _b, _a2, _t in MANDATE_LOG}
+            for m, _b, _a2, _t, _it in MANDATE_LOG}
 
-        fb = FeatureBuilder(node="network", mandates=mand)
+        # Same peer index and semantic matcher the single-shot run uses, fitted
+        # per round on what was known before this round's attacks happened.
+        mrows = [{"mandate_id": m.mandate_id,
+                  "stated_intent": m.capsule.stated_intent,
+                  "category_hint": m.capsule.category_hint or "",
+                  "ceiling": str(m.ceiling),
+                  "allowed_mccs": "|".join(m.allowed_mccs),
+                  "issued_ts": (m.capsule.issued_at.timestamp()
+                                if m.capsule.issued_at else 0.0),
+                  "exec_beneficiary": _b, "exec_amount": str(_a),
+                  "exec_ts": _t.timestamp(), "exec_item": _i}
+                 for m, _b, _a, _t, _i in MANDATE_LOG]
+        peers = build_index(mrows, cutoff_ts=cut.timestamp(), min_cluster=25)
+        sem = SemanticMatcher().fit(sorted(
+            {r["stated_intent"] for r in mrows} | {r["exec_item"] for r in mrows}))
+        for k, v in mand.items():
+            src = next((r for r in mrows if r["mandate_id"] == k), None)
+            if src:
+                v["intent"] = src["stated_intent"]
+                v["item"] = src["exec_item"]
+
+        fb = FeatureBuilder(node="network", mandates=mand, peers=peers, semantic=sem)
         feats = [fb.build(t) for t in allt]
         agent_flag = {t.txn_id: bool(t.agent_id) for t in allt}
         mand_flag = {t.txn_id: bool(t.mandate_id) for t in allt}
@@ -157,6 +180,14 @@ def main() -> int:
         # this round's labels before training, so the defender saturated in
         # round 1 and the curve was flat at 69-77% by construction.
         Xtr, ytr = reservoir.dataset()
+        # A held-out calibration slice, immediately before the cut and never
+        # trained on, so the conformal threshold is set on data exchangeable
+        # with what it will face.
+        cal_start = allt[int(len(allt) * (TRAIN_FRAC - 0.14))].ts
+        Xcal = [f for f in feats if cal_start < f.ts <= cut]
+        _tr = harness.truth
+        ycal = [1 if (_tr.get(f.txn_id) and _tr[f.txn_id].is_fraud) else 0
+                for f in Xcal]
         new_rows = [f for f in feats if f.ts <= cut and f.txn_id in label]
         new_y = [label[f.txn_id] for f in new_rows]
 
@@ -184,11 +215,14 @@ def main() -> int:
         heads = {
             "A_behavioural": Head("A_behavioural", "A").fit(Xtr, ytr),
             "B_graph": Head("B_graph", "B").fit(Xtr, ytr),
+            "P_peer": (Head("P_peer", "P").fit(
+                [x for x in Xtr if x.P], [y for x, y in zip(Xtr, ytr) if x.P])
+                if sum(1 for x in Xtr if x.P) > 40 else Head("P_peer", "P")),
             "C_intent": (Head("C_intent", "C").fit(
                 [x for x in Xtr if x.C], [y for x, y in zip(Xtr, ytr) if x.C])
                 if sum(1 for x in Xtr if x.C) > 60 else Head("C_intent", "C")),
         }
-        pf = Portfolio().fit(Xtr, ytr, heads, rfn)
+        pf = Portfolio().fit(Xtr, ytr, heads, rfn, cal_rows=Xcal, cal_y=ycal)
         # NOTE on prior correction: it does NOT belong here.
         #
         # Overriding the intercept with the deployment base rate

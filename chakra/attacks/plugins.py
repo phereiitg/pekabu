@@ -27,7 +27,7 @@ from chakra.schema.transaction import Transaction
 from chakra.schema.mandate import Mandate, IntentCapsule
 from chakra.rails import adapters
 from chakra.attacks.base import Attack, AttackContext
-from chakra.world.engine import MANDATE_LOG
+from chakra.world.engine import MANDATE_LOG, BENIGN_INTENTS
 
 
 # ===========================================================================
@@ -263,16 +263,34 @@ class AgentCompromise(Attack):
                 amt = (base * Decimal(str(self.params["amount_multiplier"]))
                        ).quantize(Decimal("0.01"))
                 # the mandate is genuine and signed; only the beneficiary is wrong
+                # The mandate must look like an ordinary one. Two tells were
+                # measured and removed:
+                #
+                #   ceiling = amount x 2  made ceiling_utilisation exactly 0.50
+                #     on every compromised execution, which is a constant no
+                #     real mandate produces. Information value 3.57 — the top
+                #     feature in Head C, and pure artifact.
+                #
+                #   stated_intent fixed to one string put every instance in the
+                #     same peer cluster, so cluster identity alone separated the
+                #     classes.
+                #
+                # A detector that beats a bug is not a detector.
+                text, mcc_hint, ceil_base = rng.choice(BENIGN_INTENTS)
                 cap = IntentCapsule(capsule_id=f"CAP{ctx.counter[0]}",
-                                    stated_intent="buy running shoes size 9",
-                                    category_hint="5661", issued_at=ts)
+                                    stated_intent=text,
+                                    category_hint=mcc_hint, issued_at=ts)
+                ceiling = Decimal(str(ceil_base)) * Decimal(
+                    str(round(rng.uniform(0.85, 1.25), 3)))
+                amt = min(amt, ceiling * Decimal(str(round(rng.uniform(0.3, 0.95), 3))))
+                amt = amt.quantize(Decimal("0.01"))
                 man = Mandate(mandate_id=f"MAN{ctx.counter[0]}", agent_id=a.agent_id,
                               payer_id=a.payer_id, capsule=cap,
-                              ceiling=amt * Decimal("2"),
-                              allowed_mccs=["5661"],
-                              expiry=ts + timedelta(hours=6),
+                              ceiling=ceiling,
+                              allowed_mccs=[mcc_hint],
+                              expiry=ts + timedelta(hours=rng.randint(2, 24)),
                               signature=cap.digest())
-                mcc = ("5661" if rng.random() < self.params["stay_in_mcc"]
+                mcc = (mcc_hint if rng.random() < self.params["stay_in_mcc"]
                        else mer.mcc)
                 txn = adapters.card_auth(
                     ctx.next_id(), ts, amt, token_pan=payer.token_pan,
@@ -282,7 +300,13 @@ class AgentCompromise(Attack):
                     agent_token_id=a.token_id,
                     decline_rate=0.01)            # clean, fast, successful
                 a.mandates.append(man)
-                MANDATE_LOG.append((man, mer.merchant_id, amt, ts))
+                # What the hijacked agent actually bought. Liquid and resaleable,
+                # and still plausible inside the mandate — which is exactly why
+                # every hard check passes and only meaning separates it.
+                from chakra.detect.semantic import DIVERTED_ITEMS, item_for
+                bought = (rng.choice(DIVERTED_ITEMS)
+                          if rng.random() < 0.72 else item_for(mcc, rng))
+                MANDATE_LOG.append((man, mer.merchant_id, amt, ts, bought))
                 out.append(self.emit(ctx, txn))
         return out
 
@@ -339,7 +363,9 @@ class AuthorisationDrift(Attack):
                 agent_id=a.agent_id, mandate_id=man.mandate_id,
                 agent_token_id=a.token_id, decline_rate=0.02)
             a.mandates.append(man)
-            MANDATE_LOG.append((man, mer.merchant_id, amt, ts_exec))
+            from chakra.detect.semantic import item_for
+            MANDATE_LOG.append((man, mer.merchant_id, amt, ts_exec,
+                                item_for(mer.mcc, rng)))
             out.append(self.emit(ctx, txn))
         return out
 

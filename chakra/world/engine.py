@@ -63,7 +63,7 @@ def sample_amount(mcc: str, payer_shift: float, rng: random.Random) -> Decimal:
 
 
 # --- intents for benign agent delegation ------------------------------------
-MANDATE_LOG = []   # (Mandate, beneficiary, amount, ts) for Head C
+MANDATE_LOG = []   # (Mandate, beneficiary, amount, ts, item) for Head C
 
 BENIGN_INTENTS = [
     ("order groceries for the week under 3000", "5411", 3000),
@@ -305,7 +305,11 @@ def run(w: World, cfg: EngineConfig, harness: LabelHarness
                     agent_token_id=agent.token_id)
                 man.record(amt)
                 agent.mandates.append(man)
-                MANDATE_LOG.append((man, mid, amt, ts))
+                # An honest execution buys something from the category it was
+                # asked for. Without an item description there is nothing for
+                # the semantic check to compare against.
+                from chakra.detect.semantic import item_for
+                MANDATE_LOG.append((man, mid, amt, ts, item_for(mcc_hint, rng)))
                 agent.executions += 1
                 agent.age_tick()
                 execs.append(Execution(

@@ -97,10 +97,10 @@ ROUTE_RATIONALE = {
 
 #: Which heads each route is allowed to use. Declared, not learned.
 ROUTE_HEADS = {
-    "agentic":   ["C_intent", "A_behavioural"],
+    "agentic":   ["C_intent", "P_peer", "A_behavioural"],
     "push":      ["B_graph", "A_behavioural"],
     "card":      ["A_behavioural", "B_graph"],
-    "recurring": ["C_intent", "A_behavioural"],
+    "recurring": ["C_intent", "P_peer", "A_behavioural"],
 }
 
 #: Per-route friction budget. Different populations, different costs.
@@ -140,7 +140,20 @@ class Portfolio:
     router: object = None
 
     def fit(self, rows: List[FeatureSet], y: Sequence[int],
-            heads: Dict[str, Head], route_fn) -> "Portfolio":
+            heads: Dict[str, Head], route_fn,
+            cal_rows: Optional[List[FeatureSet]] = None,
+            cal_y: Optional[Sequence[int]] = None) -> "Portfolio":
+        """Fit a specialist per route.
+
+        `cal_rows` is a HELD-OUT slice used only to set the conformal
+        threshold. Split conformal guarantees coverage for data exchangeable
+        with the calibration set, and training-period scores are not
+        exchangeable with later traffic because the model has seen them. Fitting
+        both on the same slice put every threshold too high — the push route
+        ranked mule farms at 0.67 PR-AUC and caught none of them. When no
+        calibration slice is supplied we fall back to the training genuine
+        scores and the guarantee is nominal only.
+        """
         by: Dict[str, List[int]] = defaultdict(list)
         for i, r in enumerate(rows):
             by[route_fn(r)].append(i)
@@ -157,8 +170,18 @@ class Portfolio:
                 continue
             hs = [heads[h] for h in allowed if h in heads and heads[h].trained]
             fus = Fusion(hs).fit_prior(sub_y).calibrate(sub_rows, sub_y)
-            genuine = [fus.prob(r) for r, lab in zip(sub_rows, sub_y) if not lab]
-            rails = [r.rail for r, lab in zip(sub_rows, sub_y) if not lab]
+
+            if cal_rows is not None and cal_y is not None:
+                cs = [(r, lab) for r, lab in zip(cal_rows, cal_y)
+                      if route_fn(r) == rname and not lab]
+                genuine = [fus.prob(r) for r, _ in cs]
+                rails = [r.rail for r, _ in cs]
+                if len(genuine) < 40:      # too thin to calibrate on
+                    genuine = [fus.prob(r) for r, lab in zip(sub_rows, sub_y) if not lab]
+                    rails = [r.rail for r, lab in zip(sub_rows, sub_y) if not lab]
+            else:
+                genuine = [fus.prob(r) for r, lab in zip(sub_rows, sub_y) if not lab]
+                rails = [r.rail for r, lab in zip(sub_rows, sub_y) if not lab]
             bud = ConformalBudget(alpha=ROUTE_ALPHA.get(rname, 0.02))
             if genuine:
                 bud.fit(genuine, rails)

@@ -18,6 +18,9 @@ from chakra.detect.features import FeatureBuilder, FeatureSet
 from chakra.detect.heads import Head, Fusion, ConformalBudget, CostModel
 from chakra.detect.portfolio import (Portfolio, route_of, ROUTE_HEADS, ROUTE_ALPHA,
                               ROUTE_RATIONALE)
+from chakra.detect.peer import build_index
+from chakra.detect.semantic import SemanticMatcher
+from chakra.detect.adversarial import AdversarialGate, three_way_split
 from scripts.run_detect import load_corpus, pr_auc, TRAIN_FRAC, FAST_DELAY_HOURS
 from chakra.schema.enums import ResponseCode
 
@@ -38,9 +41,16 @@ def main() -> int:
                        if r["expiry_ts"] else None),
             "issued": (datetime.fromisoformat(r["issued_ts"]).timestamp()
                        if r["issued_ts"] else None),
-            "hint": r["category_hint"] or None}
+            "hint": r["category_hint"] or None,
+            "intent": r.get("stated_intent", "")}
 
-    fb = FeatureBuilder(node="network", mandates=mand)
+    cut_pre = txns[int(len(txns) * TRAIN_FRAC)].ts.timestamp()
+    mrows = list(csv.DictReader((OUT / "mandates.csv").open()))
+    peers = build_index(mrows, cutoff_ts=cut_pre, min_cluster=25)
+    sem = SemanticMatcher().fit(sorted(
+        {r.get("stated_intent", "") for r in mrows} |
+        {r.get("exec_item", "") for r in mrows}))
+    fb = FeatureBuilder(node="network", mandates=mand, peers=peers, semantic=sem)
     feats = [fb.build(t) for t in txns]
     has_agent = {t.txn_id: bool(t.agent_id) for t in txns}
     has_mand = {t.txn_id: bool(t.mandate_id) for t in txns}
@@ -64,8 +74,15 @@ def main() -> int:
             if t.ts + timedelta(days=rng.lognormvariate(math.log(21), 0.5)) <= cut:
                 label[t.txn_id] = 1
 
-    Xtr = [f for f in feats if f.ts <= cut and f.txn_id in label]
+    # Three-way temporal split. The old code fitted the heads and the threshold
+    # on the same slice, so the calibration set was not exchangeable with the
+    # test period and the conformal guarantee did not apply — which is why the
+    # push route ranked mule farms at 0.46 PR-AUC and caught none of them.
+    cal_start = txns[int(len(txns) * (TRAIN_FRAC - 0.14))].ts
+    Xtr = [f for f in feats if f.ts <= cal_start and f.txn_id in label]
     ytr = [label[f.txn_id] for f in Xtr]
+    Xcal = [f for f in feats if cal_start < f.ts <= cut]
+    ycal = [int(gt[f.txn_id]["is_fraud"] == "1") for f in Xcal]
     Xte = [f for f in feats if f.ts > cut]
     yte = [int(gt[f.txn_id]["is_fraud"] == "1") for f in Xte]
     vec = {f.txn_id: gt[f.txn_id]["vector_id"] for f in Xte}
@@ -74,7 +91,8 @@ def main() -> int:
     print("=" * 80)
     print("F9b — ROUTED DETECTOR PORTFOLIO")
     print("=" * 80)
-    print(f"train {len(Xtr):,} labelled ({sum(ytr):,} fraud)   test {len(Xte):,}")
+    print(f"train {len(Xtr):,} labelled ({sum(ytr):,} fraud)   "
+          f"calibrate {len(Xcal):,} held out   test {len(Xte):,}")
 
     print("\n--- routes, and why they exist ---")
     print("Keyed on observable fields only. No route depends on a label, an")
@@ -93,6 +111,9 @@ def main() -> int:
         "C_intent":      Head("C_intent", "C").fit(
             [x for x in Xtr if x.C], [y for x, y in zip(Xtr, ytr) if x.C])
         if any(x.C for x in Xtr) else Head("C_intent", "C"),
+        "P_peer":        Head("P_peer", "P").fit(
+            [x for x in Xtr if x.P], [y for x, y in zip(Xtr, ytr) if x.P])
+        if sum(1 for x in Xtr if x.P) > 40 else Head("P_peer", "P"),
     }
     pf = Portfolio().fit(Xtr, ytr, heads, rfn)
 
@@ -105,7 +126,7 @@ def main() -> int:
     for i, f in enumerate(Xte):
         te_by[rfn(f)].append(i)
 
-    hn = ["A_behavioural", "B_graph", "C_intent"]
+    hn = ["A_behavioural", "B_graph", "C_intent", "P_peer"]
     print(f"{'route':11s} {'n test':>8s} {'fraud':>6s} " +
           "".join(f"{h.split('_')[0]:>8s}" for h in hn) +
           f"{'routed':>9s}{'used':>18s}")
@@ -159,10 +180,76 @@ def main() -> int:
         print(f"{v:11s} {rn:11s} {len(idx):5d} {len(caught)/len(idx):7.1%} "
               f"{cv/vv:12.1%}")
 
+    # ---- the adversarial gate -----------------------------------------
+    print("\n" + "=" * 80)
+    print("THE ADVERSARIAL GATE")
+    print("=" * 80)
+    print("Conformal gives the best cut against traffic that happens to arrive.")
+    print("Ours does not happen to arrive: the loop produces an attacker who")
+    print("best-responds to whatever threshold we publish. So we minimise the")
+    print("WORST attack family rather than the average one.\n")
+
+    gates = {}
+    for rn in pf.routes:
+        m = pf.routes.get(rn)
+        if not (m and m.trained):
+            continue
+        cal_g = [m.score(f) for f, y in zip(Xcal, ycal) if not y and rfn(f) == rn]
+        te_g = [m.score(f) for i, f in enumerate(Xte) if not yte[i] and rfn(f) == rn]
+        fr = [(m.score(f), val[f.txn_id] or f.amount, vec[f.txn_id])
+              for i, f in enumerate(Xte) if yte[i] and rfn(f) == rn]
+        if len(cal_g) < 60 or not fr:
+            continue
+        g = AdversarialGate(alpha=ROUTE_ALPHA.get(rn, 0.02)).fit(cal_g, te_g, fr)
+        gates[rn] = g
+        rep = g.report()
+        print(f"  {rn}")
+        print(f"    conformal  tau {rep['tau_conformal']:.4f}  "
+              f"friction {rep['conformal'].get('friction', 0):.2%}  "
+              f"worst family {rep['conformal'].get('worst_family','-')} "
+              f"escapes {rep['conformal'].get('worst_escape', 0):.0%}")
+        print(f"    robust     tau {rep['tau_robust']:.4f}  "
+              f"friction {rep['robust'].get('friction', 0):.2%}  "
+              f"worst family {rep['robust'].get('worst_family','-')} "
+              f"escapes {rep['robust'].get('worst_escape', 0):.0%}")
+        by = rep['robust'].get('by_family', {})
+        if by:
+            print("    value escaping by family, at the robust threshold:")
+            for f2, v2 in sorted(by.items(), key=lambda x: -x[1]):
+                print(f"      {f2:10s} {v2:6.1%}")
+
+    for rn, g in gates.items():
+        m = pf.routes[rn]
+        if m.budget:
+            m.budget._global = g.tau_robust
+            m.budget.tau = {k: g.tau_robust for k in m.budget.tau}
+
+    print("\n  per-vector recall AFTER the robust threshold")
+    print(f"  {'vector':11s} {'route':10s} {'n':>5s} {'recall':>8s}")
+    for v2 in sorted(per):
+        idx2 = per[v2]
+        rn = Counter(rfn(Xte[i]) for i in idx2).most_common(1)[0][0]
+        m = pf.routes.get(rn)
+        caught = sum(1 for i in idx2 if m and m.trained and m.flags(Xte[i]))
+        print(f"  {v2:11s} {rn:10s} {len(idx2):5d} {caught/len(idx2):7.1%}")
+
     # ---- portfolio vs monolith AT MATCHED FRICTION -------------------
     print("\n" + "=" * 80)
     print("ROUTED PORTFOLIO vs MONOLITHIC FUSION, AT MATCHED FRICTION")
     print("=" * 80)
+    # Recompute after the robust thresholds are adopted. The earlier
+    # per-vector pass ran against the conformal cut; reusing its totals here
+    # would compare a gated monolith against an ungated portfolio.
+    port_caught, port_value = 0, 0.0
+    for v2 in sorted(per):
+        idx2 = per[v2]
+        rn = Counter(rfn(Xte[i]) for i in idx2).most_common(1)[0][0]
+        m = pf.routes.get(rn)
+        for i in idx2:
+            if m and m.trained and m.flags(Xte[i]):
+                port_caught += 1
+                port_value += val[Xte[i].txn_id]
+
     friction = pf.total_friction(Xte, yte, rfn)
     mono = Fusion(list(heads.values())).fit_prior(ytr).calibrate(Xtr, ytr)
     mono_scores = [mono.prob(x) for x in Xte]
@@ -188,7 +275,8 @@ def main() -> int:
     print("  route's signal actually lives, instead of one threshold over a")
     print("  mixture of four populations that hold the budget for none of them.")
 
-    json.dump({"matrix": matrix,
+    json.dump({"gates": {k: g.report() for k, g in gates.items()},
+               "matrix": matrix,
                "friction": friction,
                "routed_txn_recall": port_caught / nf,
                "routed_value_recall": port_value / max(1.0, tot_value),

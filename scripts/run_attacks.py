@@ -192,14 +192,14 @@ def main() -> int:
         wr = csv.writer(fh)
         wr.writerow(["mandate_id", "agent_id", "stated_intent", "category_hint",
                      "ceiling", "allowed_mccs", "expiry_ts", "issued_ts",
-                     "exec_beneficiary", "exec_amount", "exec_ts"])
-        for man, ben, amt, ts in MANDATE_LOG:
+                     "exec_beneficiary", "exec_amount", "exec_ts", "exec_item"])
+        for man, ben, amt, ts, item in MANDATE_LOG:
             wr.writerow([man.mandate_id, man.agent_id,
                          man.capsule.stated_intent, man.capsule.category_hint or "",
                          str(man.ceiling), "|".join(man.allowed_mccs),
                          man.expiry.isoformat() if man.expiry else "",
                          man.capsule.issued_at.isoformat() if man.capsule.issued_at else "",
-                         ben, str(amt), ts.isoformat()])
+                         ben, str(amt), ts.isoformat(), item])
     print(f"  mandates.csv {len(MANDATE_LOG):,} rows")
     print(f"\nwrote {f.name} ({f.stat().st_size/1e6:.1f} MB) and {g.name}")
     print("=" * 76)

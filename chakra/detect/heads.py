@@ -72,6 +72,7 @@ class Head:
     block: str
     edges: Dict[str, List[float]] = field(default_factory=dict)
     woe: Dict[str, Dict[int, float]] = field(default_factory=dict)
+    _bin_dist: Dict[str, Dict[int, Tuple[float, float]]] = field(default_factory=dict)
     prior_logit: float = 0.0
     trained: bool = False
 
@@ -96,16 +97,37 @@ class Head:
                 else:
                     cn[b] += 1
             self.woe[f] = {}
+            self._bin_dist[f] = {}
             for b in range(len(e) + 1):
                 # Laplace-smoothed WOE. Smoothing matters here because the
                 # base rate is low and an unsmoothed empty bin gives infinity.
                 p = (cp[b] + smoothing * pos / len(y)) / (pos + smoothing)
                 q = (cn[b] + smoothing * neg / len(y)) / (neg + smoothing)
                 self.woe[f][b] = math.log(p / q)
+                self._bin_dist[f][b] = (p, q)
         self.trained = True
         return self
 
     # -- score --------------------------------------------------------
+    def information_value(self) -> List[Tuple[str, float]]:
+        """IV per feature, ranked.
+
+            IV_j = sum_b ( P(b|fraud) - P(b|genuine) ) * WOE_jb
+
+        This is what to show when someone asks which features actually carry a
+        head, rather than which happened to fire on one example. Conventional
+        reading in credit scoring: below 0.02 is noise, 0.1-0.3 is medium,
+        above 0.5 is strong and usually worth checking for leakage.
+        """
+        out = []
+        for f, w in self.woe.items():
+            dist = self._bin_dist.get(f)
+            if not dist:
+                continue
+            iv = sum((p1 - p0) * w.get(b, 0.0) for b, (p1, p0) in dist.items())
+            out.append((f, iv))
+        return sorted(out, key=lambda x: -x[1])
+
     def terms(self, r: FeatureSet) -> List[Tuple[str, float]]:
         out = []
         blk = r.block(self.block)

@@ -23,6 +23,10 @@ from chakra.schema.transaction import Transaction
 from chakra.schema.enums import Rail, ResponseCode, ThreeDSECI, POSEntryMode, AVSResult, CVV2Result
 from chakra.detect.features import FeatureBuilder, FeatureSet
 from chakra.detect.heads import Head, Fusion, ConformalBudget, CostModel
+from chakra.detect.peer import build_index
+from chakra.detect.semantic import SemanticMatcher
+from chakra.detect.sequential import SequentialTest
+from chakra.detect.counterfactual import explain
 
 OUT = Path(__file__).resolve().parents[1] / "outputs"
 OUT.mkdir(exist_ok=True)
@@ -96,9 +100,46 @@ def main() -> int:
                 "issued": (datetime.fromisoformat(r["issued_ts"]).timestamp()
                            if r["issued_ts"] else None),
                 "hint": r["category_hint"] or None,
+                "intent": r.get("stated_intent", ""),
+                "item": r.get("exec_item", ""),
             }
     print(f"loaded {len(mand):,} mandates for Head C")
-    fb = FeatureBuilder(node="network", mandates=mand)
+
+    # Head P is fitted on the TRAINING period only. Fitting on everything would
+    # let the attack define its own peer group, which is the same time-travel
+    # mistake as a random split wearing a different hat.
+    cut_pre = txns[int(len(txns) * TRAIN_FRAC)].ts.timestamp()
+    mrows = list(csv.DictReader(mp.open())) if mp.exists() else []
+    peers = build_index(mrows, cutoff_ts=cut_pre, min_cluster=25)
+    big = [c for c in peers.clusters if peers.size(c) >= 25]
+    print(f"peer index: {len(peers.clusters)} clusters, {len(big)} usable "
+          f"(>=25 executions), largest {max((peers.size(c) for c in peers.clusters), default=0)}")
+
+    # Fit the semantic model on the training period only. Committed Gemini
+    # embeddings are used when present; otherwise a deterministic offline model
+    # so a judge with no API key still gets a real number, and we say which.
+    sem = SemanticMatcher()
+    train_text = set()
+    for r in mrows:
+        try:
+            if datetime.fromisoformat(r["exec_ts"]).timestamp() > cut_pre:
+                continue
+        except Exception:
+            continue
+        if r.get("stated_intent"): train_text.add(r["stated_intent"])
+        if r.get("exec_item"): train_text.add(r["exec_item"])
+    sem.fit(sorted(train_text))
+    try:
+        import json as _json
+        vec_path = (Path(__file__).resolve().parents[1] /
+                    "artifacts" / "genai" / "intent_vectors.json")
+        if vec_path.exists():
+            sem.load_embeddings(_json.loads(vec_path.read_text()))
+    except Exception:
+        pass
+    print(f"semantic matcher: mode={sem.mode}, fitted on {len(train_text)} strings")
+
+    fb = FeatureBuilder(node="network", mandates=mand, peers=peers, semantic=sem)
     feats = [fb.build(t) for t in txns]
     build_ms = (time.perf_counter() - t0) * 1000 / len(txns)
     print(f"feature builder: visibility enforced at node 'network', "
@@ -180,7 +221,47 @@ def main() -> int:
              Head("B_graph", "B").fit(Xtr, ytr),
              Head("C_intent", "C").fit([x for x in Xtr if x.C],
                                        [y for x, y in zip(Xtr, ytr) if x.C])
-             if any(x.C for x in Xtr) else Head("C_intent", "C")]
+             if any(x.C for x in Xtr) else Head("C_intent", "C"),
+             Head("P_peer", "P").fit([x for x in Xtr if x.P],
+                                     [y for x, y in zip(Xtr, ytr) if x.P])
+             if sum(1 for x in Xtr if x.P) > 40 else Head("P_peer", "P")]
+    fus = Fusion(heads).fit_prior(ytr).calibrate(Xtr, ytr)
+
+    # ---- Head S : session evidence -----------------------------------
+    # Each execution contributes its fused LLR to a running total per agent.
+    # The features are read BEFORE the increment lands, so a transaction is
+    # never scored on evidence it supplied itself.
+    # The per-step observation must be WEAK, or the test is not sequential at
+    # all — it is a threshold on one score wearing a sequential costume. The
+    # first run crossed at a mean of 1.0 steps, which is the tell.
+    #
+    # So a step contributes only the intent-related evidence (heads C and P),
+    # not the whole fused score, and the boundary is set where a single
+    # ordinary step cannot reach it. Crossing then requires a PATTERN across
+    # steps, which is the thing AGT-021 and AGT-023 actually produce.
+    sprt = SequentialTest(alpha=0.005, beta=0.25, damp=0.42)
+    agentic_feats = [f for f in feats if f.C]
+    agentic_feats.sort(key=lambda f: f.ts)
+    aid = {t.txn_id: t.agent_id for t in txns if t.agent_id}
+    for f in agentic_feats:
+        a_id = aid.get(f.txn_id)
+        if not a_id:
+            continue
+        _z, per = fus.llr(f)
+        step_llr = per.get("C_intent", 0.0) + per.get("P_peer", 0.0)
+        f.S = sprt.observe(a_id, step_llr, f.ts.timestamp())
+    sm = sprt.summary()
+    if sm:
+        print(f"\nsession test: {sm['sessions']:.0f} sessions, "
+              f"mean length {sm['mean_session_len']:.1f} steps")
+        print(f"              {sm['crossed']:.0f} crossed the upper boundary, "
+              f"after {sm['mean_steps_to_cross']:.1f} steps on average")
+        print(f"              boundaries {sm['lower']:.2f} .. {sm['upper']:.2f} "
+              f"(alpha 0.005, beta 0.25)")
+
+    heads.append(Head("S_session", "S").fit(
+        [x for x in Xtr if x.S], [y for x, y in zip(Xtr, ytr) if x.S])
+        if sum(1 for x in Xtr if x.S) > 40 else Head("S_session", "S"))
     fus = Fusion(heads).fit_prior(ytr).calibrate(Xtr, ytr)
 
     # ---- F9 ablation --------------------------------------------------
@@ -191,8 +272,12 @@ def main() -> int:
         "A behavioural only":      ["A_behavioural"],
         "B graph only":            ["B_graph"],
         "C intent only":           ["C_intent"],
+        "P peer only":             ["P_peer"],
         "A + B (anomaly only)":    ["A_behavioural", "B_graph"],
-        "A + B + C (all three)":   ["A_behavioural", "B_graph", "C_intent"],
+        "A + B + C":               ["A_behavioural", "B_graph", "C_intent"],
+        "A + B + C + P":           ["A_behavioural", "B_graph", "C_intent", "P_peer"],
+        "all five (+ S session)":  ["A_behavioural", "B_graph", "C_intent",
+                                    "P_peer", "S_session"],
     }
     vec = {f.txn_id: gt[f.txn_id]["vector_id"] for f in Xte}
     agentic = {"AGT-004", "AGT-008"}
@@ -215,7 +300,7 @@ def main() -> int:
     print("  they add there is close to the base rate.")
 
     # ---- per-vector recall -------------------------------------------
-    full = results["A + B + C (all three)"]
+    full = results["all five (+ S session)"]
     ab = results["A + B (anomaly only)"]
     cal_scores = [s for s, y in zip(full, yte) if y == 0]
     cal_rails = [f.rail for f, y in zip(Xte, yte) if y == 0]
@@ -278,12 +363,27 @@ def main() -> int:
     print("  a sum of table lookups, which is why it fits the budget at all.")
 
     # ---- reason codes --------------------------------------------------
+    # ---- information value: which features carry each head ------------
+    print("\n" + "=" * 78)
+    print("INFORMATION VALUE — which features actually carry each head")
+    print("=" * 78)
+    for hd in heads:
+        if not hd.trained:
+            continue
+        iv = hd.information_value()[:6]
+        if not iv:
+            continue
+        print(f"  {hd.name}")
+        for f, v in iv:
+            bar = "#" * min(28, int(v * 60))
+            print(f"    {f:26s} {v:6.3f}  {bar}")
+
     print("\n" + "=" * 78)
     print("REASON CODES — the terms are the explanation")
     print("=" * 78)
     shown = 0
     for i, f in enumerate(Xte):
-        if yte[i] and full[i] > budget.threshold(f.rail) and shown < 4:
+        if yte[i] and full[i] > budget.threshold(f.rail) and shown < 3:
             z, per_head = fus.llr(f)
             rs = []
             for h in heads:
@@ -295,7 +395,26 @@ def main() -> int:
             print(f"      " + " | ".join(f"{b}:{n} {w:+.2f}" for b, n, w in rs[:3]))
             shown += 1
 
+    # ---- counterfactual reasons --------------------------------------
+    print("\n" + "=" * 78)
+    print("COUNTERFACTUAL REASONS — what would have had to be different")
+    print("=" * 78)
+    tau_all = budget.threshold("R3")
+    n_cf = 0
+    for i, f in enumerate(Xte):
+        if not yte[i] or full[i] <= tau_all or n_cf >= 4:
+            continue
+        cf = explain(f, fus, heads, tau_all)
+        if not (cf.singles or cf.combination):
+            continue
+        print(f"  {vec[f.txn_id]:9s} p={full[i]:.3f} amt=Rs{f.amount:,.0f}")
+        print(f"    {cf.sentence()}")
+        n_cf += 1
+    if n_cf == 0:
+        print("  (no flagged transaction had an actionable single-feature flip)")
+
     json.dump({"f9": {k: pr_auc(v, yte) for k, v in results.items()},
+               "sprt": sm,
                "latency_ms": {"features": build_ms, "fusion": scor,
                               "response": resp},
                "train_labels": len(tr), "unlabelled_fraud": unlabelled_fraud},

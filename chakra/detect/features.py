@@ -25,6 +25,11 @@ from chakra.schema import visibility
 
 
 # The fields each block derives from. Checked, not documented.
+#: Keys where "who else is on this" carries information. A merchant is shared
+#: by thousands of ordinary customers; a handset is not.
+COHESION_KEYS = {"device", "payee_vpa", "terminal", "agent"}
+COHESION_MAX = 60
+
 BASE_FIELDS = {
     "A": {"ts", "amount", "token_pan", "payer_vpa", "mcc", "merchant_id",
           "response_code", "pos_entry_mode", "rail"},
@@ -32,6 +37,11 @@ BASE_FIELDS = {
           "terminal_id", "device_binding_id", "agent_id"},
     "C": {"agent_id", "mandate_id", "agent_token_id", "amount", "mcc",
           "merchant_id", "threeds_eci", "ts"},
+    # Peer features derive from the mandate join, not from new wire fields.
+    "P": {"agent_id", "mandate_id", "amount", "mcc", "merchant_id", "ts"},
+    # Session evidence accumulates the other heads' output; it introduces no
+    # new wire fields either.
+    "S": {"agent_id", "mandate_id", "ts"},
 }
 
 
@@ -45,6 +55,8 @@ class FeatureSet:
     A: Dict[str, float] = field(default_factory=dict)
     B: Dict[str, float] = field(default_factory=dict)
     C: Dict[str, float] = field(default_factory=dict)
+    P: Dict[str, float] = field(default_factory=dict)
+    S: Dict[str, float] = field(default_factory=dict)
 
     def block(self, name: str) -> Dict[str, float]:
         return getattr(self, name)
@@ -54,13 +66,48 @@ def _safe_log(x: float) -> float:
     return math.log(max(1e-6, x))
 
 
+def _iet_autocorr(hist, k: int = 5) -> float:
+    """Lag-1 autocorrelation of the last k log inter-event times.
+
+    Positive means gaps cluster — short follows short, long follows long, which
+    is what a burst looks like from inside the sequence. Note the estimator is
+    biased by roughly -1/(n-1) at this sample size; that bias is constant per
+    feature so the scorecard bins around it, but it is why the raw number
+    should never be read as a correlation.
+    """
+    if len(hist) < k + 1:
+        return 0.0
+    ts = [x.ts.timestamp() for x in list(hist)[-(k + 1):]]
+    g = [math.log(max(1.0, b - a)) for a, b in zip(ts, ts[1:])]
+    if len(g) < 3:
+        return 0.0
+    m = sum(g) / len(g)
+    den = sum((x - m) ** 2 for x in g)
+    if den <= 0:
+        return 0.0
+    return sum((a - m) * (b - m) for a, b in zip(g, g[1:])) / den
+
+
+def _gap_ratio(hist, now: float) -> float:
+    """This gap against this entity's own typical gap."""
+    if len(hist) < 4:
+        return 1.0
+    ts = [x.ts.timestamp() for x in hist]
+    gaps = sorted(b - a for a, b in zip(ts, ts[1:]) if b > a)
+    if not gaps:
+        return 1.0
+    med = gaps[len(gaps) // 2] or 1.0
+    return (now - ts[-1]) / med
+
+
 class FeatureBuilder:
     """Streaming builder. Processes transactions in time order and only ever
     looks backwards, so no feature can leak the future into a decision.
     """
 
     def __init__(self, node: str = "network",
-                 mandates: Optional[Dict[str, dict]] = None) -> None:
+                 mandates: Optional[Dict[str, dict]] = None,
+                 peers=None, semantic=None) -> None:
         for block, fields in BASE_FIELDS.items():
             visibility.assert_visible(fields, node)
         self.node = node
@@ -73,6 +120,20 @@ class FeatureBuilder:
             lambda: defaultdict(set))
         self._merchant_seen: Dict[str, set] = defaultdict(set)
         self._agent_hist: Dict[str, List[Transaction]] = defaultdict(list)
+        self._key_events: Dict[str, deque] = defaultdict(lambda: deque(maxlen=80))
+        self._first_seen: Dict[str, float] = {}
+        self._co_entity: Dict[str, set] = defaultdict(set)
+        self.semantic = semantic
+        """A fitted SemanticMatcher, or None. Compares the stated intent
+        against what was actually bought — the only signal left once an attack
+        stays inside every declared bound. See detect/semantic.py."""
+        self._agent_sim: Dict[str, List[float]] = defaultdict(list)
+        self.peers = peers
+        """A fitted PeerIndex, or None. Head P scores an execution against what
+        comparable mandates actually produced — the only signal that catches an
+        attack staying inside every declared bound, because in a correct
+        protocol the beneficiary on the wire always matches the cart that was
+        signed. See detect/peer.py."""
         self.mandates = mandates or {}
         """mandate_id -> {ceiling, allowed_mccs, expiry_ts, issued_ts,
         category_hint, stated_intent}. Without this Head C can only see agent
@@ -118,9 +179,18 @@ class FeatureBuilder:
             "new_merchant":      0.0 if (t.merchant_id in self._merchant_seen[ent]) else 1.0,
             "eci_authenticated": 1.0 if t.threeds_eci is ThreeDSECI.AUTHENTICATED else 0.0,
             "is_token_entry":    1.0 if t.pos_entry_mode is POSEntryMode.TOKEN else 0.0,
+            # --- sequence terms -------------------------------------------
+            # A burst is a property of an ORDER of events, and every feature
+            # above collapses history to a count. Without these the head is
+            # blind to the pattern our simulator was built to produce:
+            # quiet for days, then everything at once.
+            "burst_ratio":       float(len(w1h)) / max(1.0, len(w7d)),
+            "iet_autocorr_5":    _iet_autocorr(h, 5),
+            "gap_vs_own_median": _gap_ratio(h, now),
         }
 
         # ---------- block B : graph -----------------------------------
+        # `_first_seen` and `_key_events` back the dormancy terms below.
         keys = t.graph_keys()
         fanouts, degrees = [], []
         for k, v in keys.items():
@@ -129,6 +199,33 @@ class FeatureBuilder:
             kk = f"{k}:{v}"
             fanouts.append(len(self._key_entities[k][v]))
             degrees.append(len(self._entity_keys[ent][k]))
+        # dormancy: how long a shared key sat quiet before it started moving.
+        # Thirty accounts on one handset that were all silent for eleven days
+        # and then all moved inside six hours is a different object from a busy
+        # family phone, and fan-out alone cannot tell them apart.
+        dorm, cohesion, age = 0.0, 0.0, 0.0
+        for k, v in keys.items():
+            if k in ("token", "payer_vpa"):
+                continue
+            kk = f"{k}:{v}"
+            ev = self._key_events[kk]
+            first = self._first_seen.get(kk)
+            if first is not None:
+                age = max(age, (now - first) / 86400.0)
+            if len(ev) >= 3:
+                evl = list(ev)
+                gaps = [b - a for a, b in zip(evl, evl[1:])]
+                quiet = max(gaps) / 86400.0
+                recent = sum(1 for x in evl if now - x <= 86400)
+                # a long silence followed by a cluster, in days x events
+                dorm = max(dorm, quiet * min(recent, 12) / 12.0)
+            if k in COHESION_KEYS:
+                peers = self._key_entities[k][v]
+                if 1 < len(peers) <= COHESION_MAX:
+                    mine = self._co_entity[ent]
+                    shared = sum(1 for pz in peers if pz != ent and pz in mine)
+                    cohesion = max(cohesion, shared / max(1, len(peers) - 1))
+
         fs.B = {
             "max_key_fanout":    float(max(fanouts) if fanouts else 0),
             "mean_key_fanout":   float(sum(fanouts) / len(fanouts)) if fanouts else 0.0,
@@ -140,6 +237,9 @@ class FeatureBuilder:
             "merchant_fanout":   float(len(self._key_entities["merchant"].get(
                                         keys.get("merchant", "~"), ()))),
             "n_keys":            float(len(keys)),
+            "dormancy_before_burst": dorm,
+            "ring_cohesion":     cohesion,
+            "key_age_days":      age,
         }
 
         # ---------- block C : intent (agentic only) -------------------
@@ -178,16 +278,54 @@ class FeatureBuilder:
                     "category_matches_intent":
                         1.0 if (m["hint"] and t.mcc == m["hint"]) else 0.0,
                 })
+                # --- semantic term ------------------------------------
+                if self.semantic is not None and m.get("intent") and m.get("item"):
+                    prev = self._agent_sim[t.agent_id]
+                    mean = sum(prev) / len(prev) if prev else None
+                    sem = self.semantic.features(m["intent"], m["item"], mean)
+                    fs.C.update(sem)
+                    # running mean updates AFTER scoring, so a transaction
+                    # never contributes to its own baseline
+                    self._agent_sim[t.agent_id].append(sem["intent_similarity"])
             else:
                 fs.C["scope_declared"] = 0.0
+
+            # ---------- block P : peer-relative ------------------------
+            if self.peers is not None and m:
+                from chakra.detect.peer import Execution as PExec, cluster_of
+                fs.P = self.peers.features(PExec(
+                    mandate_id=t.mandate_id or "",
+                    cluster=cluster_of(m.get("intent", ""), m.get("hint")),
+                    amount=amt,
+                    ceiling=m["ceiling"],
+                    mcc=t.mcc or "",
+                    hint_mcc=m.get("hint"),
+                    merchant=t.merchant_id or "",
+                    issued_ts=m["issued"] or now,
+                    exec_ts=now,
+                ))
             self._agent_hist[t.agent_id].append(t)
 
         # ---------- update state AFTER computing features -------------
         for k, v in keys.items():
             if k in ("token", "payer_vpa"):
                 continue
+            kk = f"{k}:{v}"
+            # Co-entity tracking is only meaningful on keys that a SMALL number
+            # of entities share — a handset, a payee. Tracking it on merchants
+            # is both meaningless (a busy shop has thousands of customers and
+            # that says nothing) and quadratic, which took the process out of
+            # memory the first time it ran.
+            if k in COHESION_KEYS:
+                peers_here = self._key_entities[k][v]
+                if len(peers_here) <= COHESION_MAX:
+                    for other in peers_here:
+                        self._co_entity[ent].add(other)
+                        self._co_entity[other].add(ent)
             self._key_entities[k][v].add(ent)
             self._entity_keys[ent][k].add(v)
+            self._key_events[kk].append(now)
+            self._first_seen.setdefault(kk, now)
         if t.merchant_id:
             self._merchant_seen[ent].add(t.merchant_id)
         h.append(t)
