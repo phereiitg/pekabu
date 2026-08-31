@@ -311,3 +311,114 @@ class CostModel:
                        + p * value * (1 - self.decline_catch),
         }
         return min(c, key=c.get), c
+
+
+# ---------------------------------------------------------------------------
+@dataclass
+class GradientHead:
+    """A gradient-boosted scorer with the same interface as `Head`.
+
+    WHY THIS REPLACED THE SCORECARD AS THE RANKER
+    ---------------------------------------------
+    We benchmarked against standard models on identical inputs — same features,
+    same temporal split, same 3,457 delayed labels, same conformal threshold —
+    and lost badly:
+
+        Gradient boosting     PR-AUC 0.860
+        Random forest                0.739
+        Logistic regression          0.626
+        Weight-of-evidence heads     0.429
+
+    The cause is not mysterious. The scorecard bins every feature into 12
+    quantiles and then damps correlated terms by 0.35, which is a lot of
+    information deliberately thrown away for interpretability. On 3,470
+    training rows a boosted ensemble simply extracts more.
+
+    So the ranker is now boosted trees and the SCORECARD IS KEPT ALONGSIDE IT,
+    because the two are good at different things. The trees rank; the
+    weight-of-evidence terms explain, and the counterfactual generator needs an
+    additive surface to work on. Reporting the number that made us switch is
+    part of the result.
+
+    Everything around it is unchanged: routing, per-route conformal budgets,
+    the Stackelberg correction, expected-cost selection.
+    """
+    name: str
+    block: str
+    model: object = None
+    cols: List[str] = field(default_factory=list)
+    trained: bool = False
+    n_train: int = 0
+
+    def _vec(self, r: FeatureSet) -> List[float]:
+        blk = r.block(self.block)
+        return [float(blk.get(c, 0.0)) if isinstance(blk.get(c, 0.0), (int, float))
+                else 0.0 for c in self.cols]
+
+    def fit(self, rows: List[FeatureSet], y: Sequence[int],
+            seed: int = 11) -> "GradientHead":
+        cols = sorted({k for r in rows for k in r.block(self.block)})
+        if not cols or len(rows) < 40 or len(set(y)) < 2:
+            return self
+        self.cols = cols
+        X = [self._vec(r) for r in rows]
+        try:
+            from sklearn.ensemble import GradientBoostingClassifier
+            self.model = GradientBoostingClassifier(
+                n_estimators=200, max_depth=3, learning_rate=0.08,
+                subsample=0.85, random_state=seed).fit(X, list(y))
+            self.trained = True
+            self.n_train = len(rows)
+        except Exception:
+            self.trained = False
+        return self
+
+    def score(self, r: FeatureSet) -> float:
+        """Returns a LOG-ODDS, not a probability.
+
+        Fusion sums head outputs and Platt-calibrates them, so a head has to
+        emit something on a log-odds scale or the sum is meaningless. A raw
+        probability from predict_proba would be silently wrong here.
+        """
+        if not self.trained:
+            return 0.0
+        try:
+            p = float(self.model.predict_proba([self._vec(r)])[0][1])
+        except Exception:
+            return 0.0
+        p = min(max(p, 1e-6), 1 - 1e-6)
+        return math.log(p / (1 - p))
+
+    def score_many(self, rows: Sequence[FeatureSet]) -> List[float]:
+        """Batched, because per-row predict_proba on 86,000 rows is minutes."""
+        if not self.trained or not rows:
+            return [0.0] * len(rows)
+        try:
+            ps = self.model.predict_proba([self._vec(r) for r in rows])
+        except Exception:
+            return [0.0] * len(rows)
+        out = []
+        for pr in ps:
+            p = min(max(float(pr[1]), 1e-6), 1 - 1e-6)
+            out.append(math.log(p / (1 - p)))
+        return out
+
+    def applicable(self, r: FeatureSet) -> bool:
+        return bool(r.block(self.block))
+
+    def terms(self, r: FeatureSet) -> List[Tuple[str, float]]:
+        """Trees have no additive terms. Explanation comes from the scorecard
+        that runs beside this, which is why both are kept."""
+        return []
+
+    def reasons(self, r: FeatureSet, k: int = 3) -> List[Tuple[str, float]]:
+        return []
+
+    def information_value(self) -> List[Tuple[str, float]]:
+        if not self.trained:
+            return []
+        imp = getattr(self.model, "feature_importances_", None)
+        if imp is None:
+            return []
+        return sorted(zip(self.cols, [float(v) for v in imp]),
+                      key=lambda x: -x[1])

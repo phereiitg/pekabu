@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from chakra.detect.features import FeatureBuilder, FeatureSet
-from chakra.detect.heads import Head, Fusion, ConformalBudget, CostModel
+from chakra.detect.heads import Head, GradientHead, Fusion, ConformalBudget, CostModel
 from chakra.detect.portfolio import (Portfolio, route_of, ROUTE_HEADS, ROUTE_ALPHA,
                               ROUTE_RATIONALE)
 from chakra.detect.peer import build_index
@@ -105,16 +105,32 @@ def main() -> int:
         print()
 
     # ---- shared heads, then routed specialists -----------------------
+    # Boosted trees rank; the weight-of-evidence scorecards run alongside and
+    # supply the reason codes and the additive surface the counterfactual
+    # generator needs. We benchmarked the scorecard as the ranker and it lost
+    # to gradient boosting 0.429 to 0.860 on identical inputs — see
+    # chakra/detect/heads.py::GradientHead for the full comparison.
+    def mk(name, blk, subset=None):
+        rows = [x for x in Xtr if (subset is None or x.block(blk))]
+        ys = [y for x, y in zip(Xtr, ytr) if (subset is None or x.block(blk))]
+        return GradientHead(name, blk).fit(rows, ys)
+
     heads = {
+        "A_behavioural": mk("A_behavioural", "A"),
+        "B_graph":       mk("B_graph", "B"),
+        "C_intent":      mk("C_intent", "C", True),
+        "P_peer":        mk("P_peer", "P", True),
+    }
+    # kept for explanation, not for ranking
+    woe = {
         "A_behavioural": Head("A_behavioural", "A").fit(Xtr, ytr),
-        "B_graph":       Head("B_graph", "B").fit(Xtr, ytr),
         "C_intent":      Head("C_intent", "C").fit(
             [x for x in Xtr if x.C], [y for x, y in zip(Xtr, ytr) if x.C])
         if any(x.C for x in Xtr) else Head("C_intent", "C"),
-        "P_peer":        Head("P_peer", "P").fit(
-            [x for x in Xtr if x.P], [y for x, y in zip(Xtr, ytr) if x.P])
-        if sum(1 for x in Xtr if x.P) > 40 else Head("P_peer", "P"),
     }
+    print(f"heads: gradient-boosted rankers "
+          f"({sum(1 for h in heads.values() if h.trained)}/{len(heads)} trained), "
+          f"scorecards retained for reason codes")
     pf = Portfolio().fit(Xtr, ytr, heads, rfn)
 
     # ---- the complete matrix -----------------------------------------

@@ -312,8 +312,8 @@ def f9_ablation_and_routing():
         return print("  F9b skipped — run scripts/run_portfolio.py")
     m = d["matrix"]
     routes = [r for r in ("agentic", "push", "card", "recurring") if r in m]
-    heads = ["A_behavioural", "B_graph", "C_intent"]
-    hn = ["A behavioural", "B graph", "C intent", "Routed"]
+    heads = ["A_behavioural", "B_graph", "C_intent", "P_peer"]
+    hn = ["A behavioural", "B graph", "C intent", "P peer", "Routed"]
     fig, ax = plt.subplots(figsize=(6.6, 3.2))
     vals = [[(m[r].get(h) or 0.0) for h in heads] + [m[r].get("routed") or 0.0]
             for r in routes]
@@ -321,7 +321,7 @@ def f9_ablation_and_routing():
     for i, r in enumerate(routes):
         for j, v in enumerate(vals[i]):
             sh = v / mx
-            col = BRASS if j == 3 else BLUE
+            col = BRASS if j == len(vals[i]) - 1 else BLUE
             ax.add_patch(Rectangle((j, len(routes) - 1 - i), 1, 1,
                                    facecolor=col, alpha=0.10 + 0.8 * sh,
                                    edgecolor=LINE, lw=0.8))
@@ -329,8 +329,9 @@ def f9_ablation_and_routing():
                     f"{v:.3f}" if v else "—", ha="center", va="center",
                     fontsize=8.5, color="white" if sh > 0.55 else INK,
                     fontweight="bold" if sh > 0.55 else "normal")
-    ax.set_xlim(0, 4); ax.set_ylim(0, len(routes))
-    ax.set_xticks([j + 0.5 for j in range(4)]); ax.set_xticklabels(hn, fontsize=8)
+    ax.set_xlim(0, len(hn)); ax.set_ylim(0, len(routes))
+    ax.set_xticks([j + 0.5 for j in range(len(hn))])
+    ax.set_xticklabels(hn, fontsize=7.5)
     ax.set_yticks([len(routes) - 0.5 - i for i in range(len(routes))])
     ax.set_yticklabels(routes, fontsize=8.5)
     ax.tick_params(length=0)
@@ -338,7 +339,9 @@ def f9_ablation_and_routing():
         s.set_visible(False)
     ax.set_title("F9b · Route × head — every cell reported (PR-AUC)")
     save(fig, "F9b_route_matrix",
-         {"routes": routes, "heads": hn, "values": vals})
+         {"routes": routes, "heads": hn, "values": vals,
+          "note": "cells are PR-AUC on held-out data; the last column is the "
+                  "routed specialist for that route"})
 
     # ---- routed vs monolith ----
     fig, ax = plt.subplots(figsize=(5.6, 3.2))
