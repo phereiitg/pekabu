@@ -8,7 +8,7 @@ Mastercard Innovation Challenge @ GFF 2026 · AI Defense Lab
 
 *Identify · Generate · Defend — wired into a loop*
 
-[Solution walkthrough (.docx)]([FILL_IN](https://docs.google.com/document/d/1x7NO2jHm_xP8_yaayhpf4mervahnNpyR/edit?usp=sharing&ouid=113164720406108171368&rtpof=true&sd=true)) · [Live prototype]([FILL_IN](https://agent-6a95b7ec466cb5101e--eclectic-haupia-ac817f.netlify.app/))
+[Solution walkthrough (.docx)](https://docs.google.com/document/d/1x7NO2jHm_xP8_yaayhpf4mervahnNpyR/edit?usp=sharing&ouid=113164720406108171368&rtpof=true&sd=true) · [Live prototype](https://agent-6a95b7ec466cb5101e--eclectic-haupia-ac817f.netlify.app/)
 
 </div>
 
